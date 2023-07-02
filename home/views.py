@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from .models import *
 from .serializers import *
 # Create your views here.
@@ -84,3 +85,75 @@ def delete_student(request,id):  # sourcery skip: avoid-builtin-shadow
             'status':400 ,
             'resp': str(e)
         })
+    
+
+
+"""
+What is use of APIView?
+APIView is a class-based view, which is used to handle the request-response logic of an API.
+It will help to reduce our code and make it more readable. Instead of defining the request-response logic in a function, 
+it provides get, put, delete, post, etc methods to define the request-response logic.
+"""
+
+
+class StudentApiView(APIView):
+    def get(self, request):
+        students = Student.objects.all()
+        serializer = StudentSerializer(students, many=True)
+
+        return Response({
+            'status': 200,
+            'resp': serializer.data
+        })
+
+    def post(self, request):
+        data = request.data
+        serializer= StudentSerializer(data=data)
+        if not serializer.is_valid():
+            return Response({
+                'status':400 ,
+                'resp': serializer.errors
+            })
+        serializer.save()
+        return Response({
+            'status':200 ,
+            'resp': serializer.data
+        })
+    
+    def patch(self, request):
+        try:
+            data = request.data
+            student = Student.objects.get(id=request.data['id'])
+            serializer= StudentSerializer(student,data=data,partial=True)
+            if not serializer.is_valid():
+                return Response({
+                    'status':400 ,
+                    'resp': serializer.errors
+                })
+            serializer.save()
+            return Response({
+                'status':200 ,
+                'resp': serializer.data
+            })
+        except Exception as e:
+            return Response({
+                'status':400 ,
+                'resp': str(e)
+            }) 
+
+    def delete(self, request):
+        try:
+            id = request.GET.get('id')
+            student = Student.objects.get(id=id)
+            student.delete()
+            return Response({
+                'status':200 ,
+                'resp': "student deleted successfully"
+            })
+        except Exception as e:
+            return Response({
+                'status':400 ,
+                'resp': str(e)
+            })
+     
+
